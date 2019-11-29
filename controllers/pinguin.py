@@ -27,21 +27,19 @@ import werkzeug.wrappers
 
 import collections
 
-import odoo
-from odoo.service import security
-from odoo.addons.web.controllers.main import ReportController
+from openerp.addons.report.controllers.main import ReportController
+from openerp.service import security
 
 try:
     import simplejson as json
 except ImportError:
     import json
 
-from odoo.http import request, route as http_route
+from openerp.http import request, route as http_route
 from psycopg2.extensions import ISOLATION_LEVEL_READ_COMMITTED
 
-import time
 import datetime
-from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
+from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 ####################################
 # Definition of global error codes #

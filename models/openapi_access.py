@@ -12,7 +12,7 @@ try:
 except ImportError:
     import urllib.parse as urlparse
 
-from odoo import models, fields, api, _, exceptions
+from openerp import models, fields, api, _, exceptions
 
 from ..controllers import pinguin
 

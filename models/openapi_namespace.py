@@ -3,10 +3,7 @@
 # Copyright 2018 Rafis Bikbov <https://it-projects.info/team/bikbov>
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 import collections
-import urllib
-import time
-import datetime
-from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
+from openerp.tools.misc import DEFAULT_SERVER_DATETIME_FORMAT
 
 try:
     import urlparse
@@ -14,7 +11,7 @@ except ImportError:
     import urllib.parse as urlparse
 
 import uuid
-from odoo import models, fields, api
+from openerp import models, fields, api
 from ..controllers import pinguin
 
 

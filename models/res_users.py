@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 import uuid
 
-from odoo import models, fields, api
+from openerp import models, fields, api
 
 
 class ResUsers(models.Model):
