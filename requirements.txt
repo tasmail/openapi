@@ -1,0 +1,2 @@
+   bravado_core==5.16.0
+   swagger_spec_validator==2.4.3
