@@ -4,22 +4,20 @@
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 import collections
 import urllib
-import time
+import urlparse
 import datetime
-from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+import yaml
+
+from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 import uuid
 from odoo import models, fields, api
+from unsortable_ordered_dict import UnsortableOrderedDict
 from ..controllers import pinguin
 
 
 class Namespace(models.Model):
-
     _name = 'openapi.namespace'
     _description = 'Openapi Namespace'
 
@@ -73,7 +71,7 @@ class Namespace(models.Model):
     @api.model
     def _fix_name(self, vals):
         if 'name' in vals:
-            vals['name'] = urlparse.quote_plus(vals['name'].lower())
+            vals['name'] = urllib.quote_plus(vals['name'].lower())
         return vals
 
     @api.model
@@ -91,11 +89,11 @@ class Namespace(models.Model):
         current_host = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         parsed_current_host = urlparse.urlparse(current_host)
 
-        spec = collections.OrderedDict([
+        spec = UnsortableOrderedDict([
             ('swagger', '2.0'),
             ('info', {
                 "title": self.name,
-                "version": self.write_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+                "version": self.write_date
             }),
             ('host', parsed_current_host.netloc),
             ('basePath', "/api/v1/%s" % self.name),

@@ -7,6 +7,8 @@ import json
 import urllib
 import inspect
 
+from unsortable_ordered_dict import UnsortableOrderedDict
+
 try:
     import urlparse
 except ImportError:
@@ -43,18 +45,18 @@ class Access(models.Model):
     public_methods = fields.Text(
         'Restrict Public methods',
         help='Allowed public methods besides basic ones. '
-        'Public methods are ones that don\'t start with underscore). '
-        'Format: one method per line. '
-        'When empty -- all public methods are allowed')
+             'Public methods are ones that don\'t start with underscore). '
+             'Format: one method per line. '
+             'When empty -- all public methods are allowed')
     # Options for Private methods
     # * all forbidden
     # * some are allowed
     private_methods = fields.Text(
         'Allow Private methods',
         help='Allowed private methods. '
-        'Private methods are ones that start with underscore. '
-        'Format: one method per line. '
-        'When empty -- private methods are not allowed')
+             'Private methods are ones that start with underscore. '
+             'Format: one method per line. '
+             'When empty -- private methods are not allowed')
     read_one_id = fields.Many2one(
         'ir.exports',
         'Read One Fields',
@@ -97,7 +99,7 @@ class Access(models.Model):
                 if line not in self._get_method_list():
                     raise exceptions.ValidationError(_(
                         'Method %r is not part of the model\'s method list:\n %r') % (
-                        line, self._get_method_list()))
+                                                         line, self._get_method_list()))
 
     @api.multi
     @api.constrains('private_methods')
@@ -114,7 +116,7 @@ class Access(models.Model):
                 if line not in self._get_method_list():
                     raise exceptions.ValidationError(_(
                         'Method %r is not part of the model\'s method list:\n %r') % (
-                        line, self._get_method_list()))
+                                                         line, self._get_method_list()))
 
     @api.constrains('api_create', 'api_read', 'api_update', 'api_delete')
     def _check_methods(self):
@@ -148,7 +150,7 @@ class Access(models.Model):
 
         capitalized_model_name = ''.join([s.capitalize() for s in model_name.split('.')])
 
-        paths_object = collections.OrderedDict([
+        paths_object = UnsortableOrderedDict([
             (read_many_path, {}),
             (read_one_path, {}),
         ])
@@ -431,8 +433,10 @@ class Access(models.Model):
         export_fields_read_one = pinguin.transform_strfields_to_dict(self.read_one_id.export_fields.mapped('name'))
         export_fields_read_many = pinguin.transform_strfields_to_dict(self.read_many_id.export_fields.mapped('name'))
         definitions = {}
-        definitions.update(pinguin.get_OAS_definitions_part(related_model, export_fields_read_one, definition_postfix='read_one'))
-        definitions.update(pinguin.get_OAS_definitions_part(related_model, export_fields_read_many, definition_postfix='read_many'))
+        definitions.update(
+            pinguin.get_OAS_definitions_part(related_model, export_fields_read_one, definition_postfix='read_one'))
+        definitions.update(
+            pinguin.get_OAS_definitions_part(related_model, export_fields_read_many, definition_postfix='read_many'))
         if self.api_create or self.api_update:
             all_fields = pinguin.transform_strfields_to_dict(related_model.fields_get_keys())
             definitions.update(pinguin.get_OAS_definitions_part(related_model, all_fields))

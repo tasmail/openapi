@@ -6,11 +6,14 @@ import json
 import logging
 import datetime
 import werkzeug
+import yaml
 
 from odoo import http
 from odoo.addons.web_settings_dashboard.controllers.main \
     import WebSettingsDashboard
 from odoo.addons.web.controllers.main import ensure_db
+
+from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ class OpenapiWebSettingsDashboard(WebSettingsDashboard):
 class OAS(http.Controller):
 
     @http.route('/api/v1/<namespace_name>/swagger.json',
-                type='http', auth='none', csrf=False, cors='*')
+                type='http', auth='public', csrf=False, cors='*')
     def OAS_json_spec_download(self, namespace_name, **kwargs):
         ensure_db()
         namespace = http.request.env['openapi.namespace'].search([('name', '=', namespace_name)])
@@ -72,6 +75,34 @@ class OAS(http.Controller):
 
         return werkzeug.wrappers.Response(
             json.dumps(namespace.get_OAS()),
+            status=200,
+            **response_params
+        )
+
+    @http.route('/api/v1/<namespace_name>/swagger.yaml',
+                type='http', auth='public', csrf=False, cors='*')
+    def OAS_yaml_spec_download(self, namespace_name, **kwargs):
+        ensure_db()
+        namespace = http.request.env['openapi.namespace'].search([('name', '=', namespace_name)])
+        if not namespace:
+            raise werkzeug.exceptions.NotFound()
+        if namespace.token != kwargs.get('token'):
+            raise werkzeug.exceptions.Forbidden()
+
+        response_params = {
+            'headers': [('Content-Type', 'application/json')]
+        }
+        if 'download' in kwargs:
+            response_params = {
+                'headers': [
+                    ('Content-Type', 'application/octet-stream; charset=binary'),
+                    ('Content-Disposition', http.content_disposition('swagger.yaml')),
+                ],
+                'direct_passthrough': True
+            }
+
+        return werkzeug.wrappers.Response(
+            yaml.dump(namespace.get_OAS(), default_flow_style=False, allow_unicode=True),
             status=200,
             **response_params
         )

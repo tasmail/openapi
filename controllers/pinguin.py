@@ -28,8 +28,10 @@ import werkzeug.wrappers
 import collections
 
 import odoo
+from odoo.addons.report.controllers.main import ReportController
+
 from odoo.service import security
-from odoo.addons.web.controllers.main import ReportController
+from unsortable_ordered_dict import UnsortableOrderedDict
 
 try:
     import simplejson as json
@@ -560,7 +562,7 @@ def update(d, u):
     """
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
-            d[k] = update(d.get(k, collections.OrderedDict([])), v)
+            d[k] = update(d.get(k, UnsortableOrderedDict([])), v)
         else:
             d[k] = v
     return d
@@ -920,7 +922,7 @@ def get_dict_from_record(record, spec, include_fields, exclude_fields):
     :rtype collections.OrderedDict
     """
     map(validate_extra_field, include_fields + exclude_fields)
-    result = collections.OrderedDict([])
+    result = UnsortableOrderedDict([])
     _spec = [fld for fld in spec
              if fld not in exclude_fields] + list(include_fields)
     if filter(lambda x: isinstance(x, six.string_types) and '/' in x, _spec):
