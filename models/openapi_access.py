@@ -141,12 +141,13 @@ class Access(models.Model):
 
     def get_OAS_paths_part(self):
         model_name = self.model
+        model_display_name = self.model_id.name
         read_many_path = '/%s' % model_name
         read_one_path = '%s/{id}' % read_many_path
         param_id_ref = "#/parameters/RecordIdInPath"
 
-        read_many_definition_ref = "#/definitions/%s" % pinguin.get_definition_name(self.model, '', 'read_many')
-        read_one_definition_ref = "#/definitions/%s" % pinguin.get_definition_name(self.model, '', 'read_one')
+        read_many_definition_ref = "#/definitions/%s" % pinguin.get_definition_name(model_name, '', 'read_many')
+        read_one_definition_ref = "#/definitions/%s" % pinguin.get_definition_name(model_name, '', 'read_one')
 
         capitalized_model_name = ''.join([s.capitalize() for s in model_name.split('.')])
 
@@ -157,29 +158,29 @@ class Access(models.Model):
 
         if self.api_create:
             paths_object[read_many_path]['post'] = {
-                "summary": "Add a new %s object to the store" % model_name,
+                "summary": "Add a new %s object to the store" % model_display_name,
                 "description": "",
                 "operationId": "add%s" % capitalized_model_name,
                 "parameters": [
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "%s object that needs to be added to the store" % model_name,
+                        "description": "%s object that needs to be added to the store" % model_display_name,
                         "required": True,
                         "schema": {
-                            "$ref": "#/definitions/%s" % pinguin.get_definition_name(self.model)
+                            "$ref": "#/definitions/%s" % pinguin.get_definition_name(model_name)
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "successful create",
+                        "description": "Successfully created",
                         "schema": {
                             "$ref": "#/definitions/%s-read_one" % model_name
                         }
                     },
                     "400": {
-                        "description": "invalid data",
+                        "description": "Invalid data",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -189,15 +190,15 @@ class Access(models.Model):
 
         if self.api_read:
             paths_object[read_many_path]['get'] = {
-                "summary": "Get all %s objects" % model_name,
-                'description': 'Returns all %s objects' % model_name,
+                "summary": "Get all %s objects" % model_display_name,
+                'description': 'Returns all %s objects' % model_display_name,
                 "operationId": "getAll%s" % capitalized_model_name,
                 "produces": [
                     "application/json"
                 ],
                 "responses": {
                     "200": {
-                        "description": "A list of %s." % model_name,
+                        "description": "A list of %s." % model_display_name,
                         "schema": {
                             "type": "array",
                             "items": {
@@ -209,8 +210,8 @@ class Access(models.Model):
             }
 
             paths_object[read_one_path]['get'] = {
-                "summary": "Get %s by ID" % model_name,
-                "description": "Returns a single %s" % model_name,
+                "summary": "Get %s by ID" % model_display_name,
+                "description": "Returns a single %s" % model_display_name,
                 "operationId": "get%sById" % capitalized_model_name,
                 "produces": [
                     "application/json"
@@ -222,20 +223,20 @@ class Access(models.Model):
                 ],
                 "responses": {
                     "200": {
-                        "description": "successful operation",
+                        "description": "Successful operation",
                         "schema": {
                             "$ref": read_one_definition_ref
                         }
                     },
                     "404": {
-                        "description": "%s not found" % model_name
+                        "description": "%s not found" % model_display_name
                     }
                 }
             }
 
         if self.api_update:
             paths_object[read_one_path]['put'] = {
-                "summary": "Update %s by ID" % model_name,
+                "summary": "Update %s by ID" % model_display_name,
                 "description": "",
                 "operationId": "update%sById" % capitalized_model_name,
                 "parameters": [
@@ -245,32 +246,32 @@ class Access(models.Model):
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "Updated %s object" % model_name,
+                        "description": "Updated %s object" % model_display_name,
                         "required": True,
                         "schema": {
-                            "$ref": "#/definitions/%s" % pinguin.get_definition_name(self.model)
+                            "$ref": "#/definitions/%s" % pinguin.get_definition_name(model_name)
                         }
                     }
                 ],
                 "responses": {
                     "204": {
-                        "description": "successful update",
+                        "description": "Successfully updated",
                     },
                     "400": {
-                        "description": "invalid data",
+                        "description": "Invalid data",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "%s not found" % model_name
+                        "description": "%s not found" % model_display_name
                     }
                 }
             }
 
         if self.api_delete:
             paths_object[read_one_path]['delete'] = {
-                "summary": "Delete %s by ID" % model_name,
+                "summary": "Delete %s by ID" % model_display_name,
                 "description": "",
                 "operationId": "delete%s" % capitalized_model_name,
                 "produces": [
@@ -283,10 +284,10 @@ class Access(models.Model):
                 ],
                 "responses": {
                     "204": {
-                        "description": "successful delete"
+                        "description": "Successfully deleted"
                     },
                     "404": {
-                        "description": "%s not found" % model_name
+                        "description": "%s not found" % model_display_name
                     }
                 }
             }
@@ -303,7 +304,7 @@ class Access(models.Model):
             allowed_methods = list(set(allowed_methods))
 
             paths_object[read_one_path]['patch'] = {
-                "summary": "Patch %s by single ID" % model_name,
+                "summary": "Patch %s by single ID" % model_display_name,
                 "description": "Call model method for single record.",
                 "operationId": "callMethodFor%sSingleRecord" % capitalized_model_name,
                 "consumes": [
@@ -356,7 +357,7 @@ class Access(models.Model):
             }
 
             paths_object[read_many_path]['patch'] = {
-                "summary": "Patch %s by some IDs" % model_name,
+                "summary": "Patch %s by some IDs" % model_display_name,
                 "description": "Call model method for recordset.",
                 "operationId": "callMethodFor%sRecordset" % capitalized_model_name,
                 "consumes": [

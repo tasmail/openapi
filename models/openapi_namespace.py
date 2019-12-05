@@ -53,7 +53,9 @@ class Namespace(models.Model):
                         default=lambda self: str(uuid.uuid4()), readonly=True,
                         required=True, copy=False,
                         help='Token passed by a query string parameter to access the specification.')
-    spec_url = fields.Char('Specification link', compute='_compute_spec_url')
+    spec_url = fields.Char('Specification JSON', compute='_compute_spec_url')
+
+    spec_yaml_url = fields.Char('Specification YAML', compute='_compute_spec_yaml_url')
 
     _sql_constraints = [
         ('name_uniq',
@@ -241,6 +243,11 @@ class Namespace(models.Model):
     def _compute_spec_url(self):
         for record in self:
             record.spec_url = "/api/v1/%s/swagger.json?token=%s&db=%s" % (record.name, record.token, self._cr.dbname)
+
+    @api.depends('name', 'token')
+    def _compute_spec_yaml_url(self):
+        for record in self:
+            record.spec_yaml_url = "/api/v1/%s/swagger.yaml?token=%s&db=%s" % (record.name, record.token, self._cr.dbname)
 
     def reset_token(self):
         for record in self:
