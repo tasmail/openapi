@@ -414,7 +414,7 @@ class Access(models.Model):
             for path_method in path_item_value.values():
                 # add tag
                 path_method.update({
-                    'tags': [model_name]
+                    'tags': [model_display_name]
                 })
 
                 # add global responses

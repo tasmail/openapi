@@ -170,13 +170,13 @@ class Namespace(models.Model):
                     "type": "object",
                     "required": [
                         "error",
-                        "error_descrip"
+                        "error_description"
                     ],
                     "properties": {
                         "error": {
                             "type": "string"
                         },
-                        "error_descrip": {
+                        "error_description": {
                             "type": "string"
                         }
                     }

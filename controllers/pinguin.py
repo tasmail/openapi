@@ -62,7 +62,8 @@ CODE__user_no_perm = (401, "Permissions", "%s")
 CODE__method_blocked = (403, "Blocked Method",
                         "This method is not whitelisted on this model.")
 CODE__db_not_found = (404, "Db not found", "Welcome to macondo!")
-CODE__canned_ctx_not_found = (404, "Canned context not found", "The requested canned context is not configured on this model")
+CODE__canned_ctx_not_found = (
+404, "Canned context not found", "The requested canned context is not configured on this model")
 CODE__obj_not_found = (404, "Object not found",
                        "This object is not available on this instance.")
 CODE__res_not_found = (404, "Resource not found",
@@ -100,36 +101,6 @@ def successful_response(status, data=None):
     )
 
 
-def error_response(status, error, error_descrip):
-    """Error responses wrapper.
-
-    :param int status: The error code.
-    :param str error: The error summary.
-    :param str error_descrip: The error description.
-
-    :returns: The werkzeug `response object`_.
-    :rtype: werkzeug.wrappers.Response
-
-    .. _response object:
-        http://werkzeug.pocoo.org/docs/0.14/wrappers/#module-werkzeug.wrappers
-
-    """
-    return werkzeug.wrappers.Response(
-        status=status,
-        content_type='application/json; charset=utf-8',
-        response=json.dumps({
-            'error': error,
-            'error_descrip': error_descrip,
-        }),
-    )
-
-
-##########################
-# Pinguin Authentication #
-##########################
-
-
-# User token auth (db-scoped)
 def authenticate_token_for_user(token):
     """Authenticate against the database and setup user session corresponding to the token.
 
@@ -152,6 +123,36 @@ def authenticate_token_for_user(token):
 
         return user
     raise werkzeug.exceptions.HTTPException(response=error_response(*CODE__no_user_auth))
+
+
+##########################
+# Pinguin Authentication #
+##########################
+
+
+# User token auth (db-scoped)
+def error_response(status, error, error_description):
+    """Error responses wrapper.
+
+    :param int status: The error code.
+    :param str error: The error summary.
+    :param str error_descrip: The error description.
+
+    :returns: The werkzeug `response object`_.
+    :rtype: werkzeug.wrappers.Response
+
+    .. _response object:
+        http://werkzeug.pocoo.org/docs/0.14/wrappers/#module-werkzeug.wrappers
+
+    """
+    return werkzeug.wrappers.Response(
+        status=status,
+        content_type='application/json; charset=utf-8',
+        response=json.dumps({
+            'error': error,
+            'error_description': error_description,
+        }),
+    )
 
 
 def get_auth_header(headers, raise_exception=False):
@@ -189,14 +190,16 @@ def get_data_from_auth_header(header):
     try:
         decoded_token_parts = base64.decodestring(normalized_token).split(b':')
     except TypeError:
-        raise werkzeug.exceptions.HTTPException(response=error_response(500, 'Invalid header', 'Basic auth header must be valid base64 string'))
+        raise werkzeug.exceptions.HTTPException(
+            response=error_response(500, 'Invalid header', 'Basic auth header must be valid base64 string'))
 
     if len(decoded_token_parts) == 1:
         db_name, user_token = None, decoded_token_parts[0]
     elif len(decoded_token_parts) == 2:
         db_name, user_token = decoded_token_parts
     else:
-        err_descrip = 'Basic auth header payload must be of the form "<%s>" (encoded to base64)' % 'user_token' if odoo.tools.config['dbfilter'] else 'db_name:user_token'
+        err_descrip = 'Basic auth header payload must be of the form "<%s>" (encoded to base64)' % 'user_token' if \
+        odoo.tools.config['dbfilter'] else 'db_name:user_token'
         raise werkzeug.exceptions.HTTPException(response=error_response(500, 'Invalid header', err_descrip))
 
     return db_name, user_token
@@ -217,6 +220,7 @@ def setup_db(httprequest, db_name):
         raise werkzeug.exceptions.HTTPException(response=error_response(*CODE__db_not_found))
 
     httprequest.session.db = db_name
+
 
 ###################
 # Pinguin Routing #
@@ -251,7 +255,8 @@ def get_namespace_by_name_from_users_namespaces(user, namespace_name, raise_exce
 
 
 # Create openapi.log record
-def create_log_record(namespace_id, namespace_log_request, namespace_log_response, user_id, user_request, user_response):
+def create_log_record(namespace_id, namespace_log_request, namespace_log_response, user_id, user_request,
+                      user_response):
     """create log for request
 
     :param int namespace_id: Requested namespace id.
@@ -302,6 +307,7 @@ def route(*args, **kwargs):
 
     :returns: wrapped method
     """
+
     def decorator(controller_method):
 
         @http_route(*args, **kwargs)
@@ -311,7 +317,8 @@ def route(*args, **kwargs):
             db_name, user_token = get_data_from_auth_header(auth_header)
             setup_db(request.httprequest, db_name)
             authenticated_user = authenticate_token_for_user(user_token)
-            namespace = get_namespace_by_name_from_users_namespaces(authenticated_user, ikwargs['namespace'], raise_exception=True)
+            namespace = get_namespace_by_name_from_users_namespaces(authenticated_user, ikwargs['namespace'],
+                                                                    raise_exception=True)
             data_for_log = {
                 'namespace_id': namespace.id,
                 'namespace_log_request': namespace.log_request,
@@ -332,7 +339,7 @@ def route(*args, **kwargs):
                 response = error_response(
                     status=500,
                     error=type(e).__name__,
-                    error_descrip=e.name if hasattr(e, 'name') else str(e)
+                    error_description=e.name if hasattr(e, 'name') else str(e)
                 )
 
             data_for_log.update({
@@ -344,6 +351,7 @@ def route(*args, **kwargs):
             return response
 
         return controller_method_wrapper
+
     return decorator
 
 
@@ -953,7 +961,8 @@ def get_dict_from_record(record, spec, include_fields, exclude_fields):
         # Normal field, or unspecified relational
         elif isinstance(field, six.string_types):
             if not hasattr(record, field):
-                raise odoo.exceptions.ValidationError(odoo._('The model "%s" has no such field: "%s".') % (record._name, field))
+                raise odoo.exceptions.ValidationError(
+                    odoo._('The model "%s" has no such field: "%s".') % (record._name, field))
 
             # result[field] = getattr(record, field)
             result[field] = record[field]
