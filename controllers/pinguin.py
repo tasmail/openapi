@@ -63,7 +63,7 @@ CODE__method_blocked = (403, "Blocked Method",
                         "This method is not whitelisted on this model.")
 CODE__db_not_found = (404, "Db not found", "Welcome to macondo!")
 CODE__canned_ctx_not_found = (
-404, "Canned context not found", "The requested canned context is not configured on this model")
+    404, "Canned context not found", "The requested canned context is not configured on this model")
 CODE__obj_not_found = (404, "Object not found",
                        "This object is not available on this instance.")
 CODE__res_not_found = (404, "Resource not found",
@@ -199,7 +199,7 @@ def get_data_from_auth_header(header):
         db_name, user_token = decoded_token_parts
     else:
         err_descrip = 'Basic auth header payload must be of the form "<%s>" (encoded to base64)' % 'user_token' if \
-        odoo.tools.config['dbfilter'] else 'db_name:user_token'
+            odoo.tools.config['dbfilter'] else 'db_name:user_token'
         raise werkzeug.exceptions.HTTPException(response=error_response(500, 'Invalid header', err_descrip))
 
     return db_name, user_token
@@ -313,8 +313,13 @@ def route(*args, **kwargs):
         @http_route(*args, **kwargs)
         @functools.wraps(controller_method)
         def controller_method_wrapper(*iargs, **ikwargs):
-            auth_header = get_auth_header(request.httprequest.headers, raise_exception=True)
-            db_name, user_token = get_data_from_auth_header(auth_header)
+            db_name = request.httprequest.values.get('db')
+            user_token = request.httprequest.values.get('token')
+
+            if not db_name or not user_token:
+                auth_header = get_auth_header(request.httprequest.headers, raise_exception=True)
+                db_name, user_token = get_data_from_auth_header(auth_header)
+
             setup_db(request.httprequest, db_name)
             authenticated_user = authenticate_token_for_user(user_token)
             namespace = get_namespace_by_name_from_users_namespaces(authenticated_user, ikwargs['namespace'],
@@ -452,7 +457,7 @@ def get_model_openapi_access(namespace, model):
         'context': {},  # Take ot here FIXME: make sure it is for create_context
         'out_fields_read_multi': (),
         'out_fields_read_one': (),
-        'out_fields_create_one': (),  # FIXME: for what?
+        'out_fields_create_one': (),
         'method': {
             'public': {
                 'mode': '',
@@ -487,8 +492,18 @@ def get_model_openapi_access(namespace, model):
     for c in openapi_access.create_context_ids.mapped('context'):
         res['context'].update(json.loads(c[1:-1]))
 
-    res['out_fields_read_multi'] = openapi_access.read_many_id.export_fields.mapped('name')
-    res['out_fields_read_one'] = openapi_access.read_one_id.export_fields.mapped('name')
+    related_model = request.env(cr, uid)[openapi_access.model].sudo()
+    all_fields = transform_strfields_to_dict(related_model.fields_get_keys())
+
+    read_multi_fields = openapi_access.read_many_id.export_fields.mapped('name')
+    read_one_fields = openapi_access.read_one_id.export_fields.mapped('name')
+    if not read_multi_fields:
+        read_multi_fields = all_fields
+    if not read_one_fields:
+        read_one_fields = all_fields
+    res['out_fields_read_multi'] = read_multi_fields
+    res['out_fields_read_one'] = read_one_fields
+    res['out_fields_create_one'] = all_fields
 
     if openapi_access.public_methods:
         res['method']['public']['whitelist'] = openapi_access.public_methods.split()
@@ -1042,7 +1057,8 @@ def get_definition_name(modelname, prefix='', postfix='', splitter='-'):
 
 
 # Get OAS definitions part for model and nested models
-def get_OAS_definitions_part(model_obj, export_fields_dict, definition_prefix='', definition_postfix=''):
+def get_OAS_definitions_part(model_obj, export_fields_dict, definition_prefix='', definition_postfix='',
+                             ignore_required_fields=False):
     """Recursively gets definition parts of the OAS for model by export fields.
 
     :param odoo.models.Model model_obj: The model object.
@@ -1133,7 +1149,7 @@ def get_OAS_definitions_part(model_obj, export_fields_dict, definition_prefix=''
 
         definitions[definition_name]['properties'][field] = field_property
 
-        if meta['required']:
+        if meta['required'] and not ignore_required_fields:
             definitions[definition_name]['required'].append(field)
 
     if not definitions[definition_name]['required']:

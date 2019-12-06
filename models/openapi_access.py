@@ -431,26 +431,41 @@ class Access(models.Model):
 
     def get_OAS_definitions_part(self):
         related_model = self.env[self.model]
+
         export_fields_read_one = pinguin.transform_strfields_to_dict(self.read_one_id.export_fields.mapped('name'))
         export_fields_read_many = pinguin.transform_strfields_to_dict(self.read_many_id.export_fields.mapped('name'))
-        definitions = {}
-        definitions.update(
-            pinguin.get_OAS_definitions_part(related_model, export_fields_read_one, definition_postfix='read_one'))
-        definitions.update(
-            pinguin.get_OAS_definitions_part(related_model, export_fields_read_many, definition_postfix='read_many'))
-        if self.api_create or self.api_update:
+
+        all_fields = []
+        if not export_fields_read_many or not export_fields_read_one or self.api_create or self.api_update:
             all_fields = pinguin.transform_strfields_to_dict(related_model.fields_get_keys())
+            if not export_fields_read_one:
+                export_fields_read_one = all_fields
+            if not export_fields_read_many:
+                export_fields_read_many = all_fields
+
+        definitions = {}
+
+        definitions.update(
+            pinguin.get_OAS_definitions_part(related_model, export_fields_read_one, definition_postfix='read_one',
+                                             ignore_required_fields=True))
+        definitions.update(
+            pinguin.get_OAS_definitions_part(related_model, export_fields_read_many, definition_postfix='read_many',
+                                             ignore_required_fields=True))
+        if self.api_create or self.api_update:
             definitions.update(pinguin.get_OAS_definitions_part(related_model, all_fields))
         return definitions
 
     def get_OAS_part(self):
         self = self.sudo()
+
+        model_display_name = self.model_id.name
+
         return {
             'definitions': self.get_OAS_definitions_part(),
             'paths': self.get_OAS_paths_part(),
             'tag': {
-                "name": "%s" % self.model,
-                "description": "Everything about %s" % self.model,
+                "name": "%s" % model_display_name,
+                "description": "Everything about %s" % model_display_name,
             }
         }
 
